@@ -17,9 +17,9 @@ class CloudPaymentsClient(AbstractInteractionClient):
     CONNECTOR = aiohttp.connector.TCPConnector()
     SERVICE = "MyClient"
 
-    def __init__(self, public_id: str = "Aladdin",
-                 api_secret: str = "open sesame",
-                 yandex_pay_token: str = "QWxhZGRpbjpvcGVuIHNlc2FtZQ=="):
+    def __init__(self, public_id: str,
+                 api_secret: str,
+                 yandex_pay_token: str):
         super(CloudPaymentsClient, self).__init__()
         self.public_id = public_id
         self.api_secret = api_secret
