@@ -1,7 +1,6 @@
 import asyncio
 
 import aiohttp.connector
-from aiohttp import web
 
 from abstract_client import AbstractInteractionClient, InteractionResponseError
 from schemas import CardPayment, AuthHeader, TokenPayment, ResponseData

@@ -1,6 +1,3 @@
-from dataclasses import dataclass
-from typing import Optional
-
 from marshmallow import Schema, fields, validate
 
 CURRENCY = ["RUB", "EUR", "USD", "GRB", "UAH", "BYR", "BYN", "KZT", "AZN",
