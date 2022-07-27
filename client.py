@@ -3,37 +3,14 @@ import asyncio
 import aiohttp.connector
 from aiohttp import web
 
-from abstract_client import AbstractInteractionClient
-from schemas import Payment, AuthHeader
+from abstract_client import AbstractInteractionClient, InteractionResponseError
+from schemas import CardPayment, AuthHeader, TokenPayment, ResponseData
 import base64
+from logging import getLogger
 
-test_data = {
-    "Amount": 10,
-    "Currency": "RUB",
-    "InvoiceId": "1234567",
-    "IpAddress": "123.123.123.123",
-    "Description": "Оплата товаров в example.com",
-    "AccountId": "user_x",
-    "Name": "CARDHOLDER NAME",
-    "CardCryptogramPacket": "01492500008719030128SMfLeYdKp5dSQVIiO5l6ZCJiPdel4uDjdFTTz1UnXY+3QaZcNOW8lmXg0H670MclS4lI+qLkujKF4pR5Ri+T/E04Ufq3t5ntMUVLuZ998DLm+OVHV7FxIGR7snckpg47A73v7/y88Q5dxxvVZtDVi0qCcJAiZrgKLyLCqypnMfhjsgCEPF6d4OMzkgNQiynZvKysI2q+xc9cL0+CMmQTUPytnxX52k9qLNZ55cnE8kuLvqSK+TOG7Fz03moGcVvbb9XTg1oTDL4pl9rgkG3XvvTJOwol3JDxL1i6x+VpaRxpLJg0Zd9/9xRJOBMGmwAxo8/xyvGuAj85sxLJL6fA==",
-    "Payer":
-        {
-            "FirstName": "Тест",
-            "LastName": "Тестов",
-            "MiddleName": "Тестович",
-            "Birth": "1955-02-24",
-            "Address": "тестовый проезд дом тест",
-            "Street": "Lenina",
-            "City": "MO",
-            "Country": "RU",
-            "Phone": "123",
-            "Postcode": "345"
-        }
-}
+from test_data import TEST_CARD_DATA, TEST_TOKEN_DATA
 
-test_header = {
-    "Authorization": "Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=="
-}
+logger = getLogger(__name__)
 
 
 class CloudPaymentsClient(AbstractInteractionClient):
@@ -49,22 +26,51 @@ class CloudPaymentsClient(AbstractInteractionClient):
         self.api_secret = api_secret
         self.yandex_pay_token = self.decode_token(yandex_pay_token)
 
-    async def crypto_payment(self, data):
+    async def __aenter__(self):
+        await self.session.__aenter__()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.close()
+
+    async def cards_crypto_payment(self,
+                                   data: dict) -> InteractionResponseError | ResponseData:
         url = self.endpoint_url("/payments/cards/charge")
-        result = Payment().load(data)
-        async with self.CONNECTOR:
-            async with self.session:
-                await self.post(url=url, interaction_method="GET", data=result,
-                                headers=self.create_header(self.public_id,
-                                                           self.api_secret))
+        result = CardPayment().load(data)
+        try:
+            response = await self.post(url=url, interaction_method="POST",
+                                       data=result,
+                                       headers=self.create_header(
+                                           self.public_id,
+                                           self.api_secret))
+            response = ResponseData().load(response)
+            return response
+        except InteractionResponseError as ex:
+            logger.error(ex)
+            return ex
+
+    async def tokens_crypto_payment(self,
+                                    data: dict) -> InteractionResponseError | ResponseData:
+        url = self.endpoint_url("/payments/tokens/charge")
+        result = TokenPayment().load(data)
+        try:
+            response = await self.post(url=url, interaction_method="POST",
+                                       data=result,
+                                       headers=self.create_header(
+                                           self.public_id,
+                                           self.api_secret))
+            response = ResponseData().load(response)
+            return response
+        except InteractionResponseError as ex:
+            logger.error(ex)
+            return ex
 
     @staticmethod
     def create_header(public_id, api_secret):
         base_token = "Basic " + base64.b64encode(
             f"{public_id}:{api_secret}".encode('ascii')).decode(
             "ascii")
-        header_schema = AuthHeader()
-        header = header_schema.dump({"token": base_token})
+        header = AuthHeader().load({"Authorization": base_token})
         return header
 
     @staticmethod
@@ -74,6 +80,12 @@ class CloudPaymentsClient(AbstractInteractionClient):
         return token
 
 
+async def main():
+    async with CloudPaymentsClient() as client:
+        await client.cards_crypto_payment(TEST_CARD_DATA)
+        await client.tokens_crypto_payment(TEST_TOKEN_DATA)
+
+
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(CloudPaymentsClient().crypto_payment(test_data))
+    loop.run_until_complete(main())
