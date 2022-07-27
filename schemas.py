@@ -61,11 +61,14 @@ class TokenPayment(BasePayment):
 
 
 class ResponseData(Schema):
-    success = fields.String(required=True)
-    message = fields.String()
-    model = fields.Dict()
+    success = fields.Bool(required=True, attribute="Success",
+                          data_key="Success")
+    message = fields.String(attribute="Message",
+                            data_key="Message")
+    model = fields.Dict(attribute="Model",
+                        data_key="Model")
 
 
 class AuthHeader(Schema):
     authorization = fields.String(attribute="Authorization",
-                                 data_key="Authorization")
+                                  data_key="Authorization")

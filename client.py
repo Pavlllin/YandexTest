@@ -42,6 +42,7 @@ class CloudPaymentsClient(AbstractInteractionClient):
                                        headers=self.create_header(
                                            self.public_id,
                                            self.api_secret))
+            print(response)
             response = ResponseData().load(response)
             return response
         except InteractionResponseError as ex:
@@ -80,7 +81,10 @@ class CloudPaymentsClient(AbstractInteractionClient):
 
 
 async def main():
-    async with CloudPaymentsClient() as client:
+    api_secret = ""
+    public_id = ""
+    yandex_pay_token = ""
+    async with CloudPaymentsClient(api_secret, public_id, yandex_pay_token) as client:
         await client.cards_crypto_payment(TEST_CARD_DATA)
         await client.tokens_crypto_payment(TEST_TOKEN_DATA)
 
