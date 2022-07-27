@@ -31,6 +31,15 @@ TEST_TOKEN_DATA = {
     "Token": "success_1111a3e0-2428-48fb-a530-12815d90d0e8"
 }
 
+WRONG_TEST_TOKEN_DATA = {
+    "Currency": "RUB",
+    "InvoiceId": "1234567",
+    "Description": "Оплата товаров в example.com",
+    "AccountId": "user_x",
+    "Token": "success_1111a3e0-2428-48fb-a530-12815d90d0e8"
+}
+
+
 TEST_HEADER = {
     "Authorization": "Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=="
 }
